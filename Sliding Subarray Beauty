@@ -1,0 +1,39 @@
+#include <stdlib.h>
+
+/**
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+int* getSubarrayBeauty(int* nums, int numsSize, int k, int x, int* returnSize) {
+    *returnSize = numsSize - k + 1;
+    int* ans = (int*)malloc((*returnSize) * sizeof(int));
+    if (ans == NULL) {
+        *returnSize = 0;
+        return NULL;
+    }
+
+    int freq[101] = {0};
+
+    int get_xth_negative(int* freq, int x) {
+        int count = 0;
+        for (int val = -50; val < 0; val++) {
+            count += freq[val + 50];
+            if (count >= x) {
+                return val;
+            }
+        }
+        return 0;
+    }
+
+    for (int i = 0; i < k; i++) {
+        freq[nums[i] + 50]++;
+    }
+    ans[0] = get_xth_negative(freq, x);
+
+    for (int i = k; i < numsSize; i++) {
+        freq[nums[i] + 50]++;      
+        freq[nums[i - k] + 50]--;  
+        ans[i - k + 1] = get_xth_negative(freq, x);
+    }
+
+    return ans;
+}
