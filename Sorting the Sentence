@@ -1,0 +1,52 @@
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+
+char * sortSentence(char * s){
+    // Array to hold pointers to the clean words (1-indexed, max 9 words)
+    // Using 10 elements so indices 1 to 9 are perfectly safe
+    char *words[10] = {NULL};
+    int count = 0;
+    
+    // Create a local writable copy of the input string to safely tokenize it
+    int s_len = strlen(s);
+    char *s_copy = (char *)malloc((s_len + 1) * sizeof(char));
+    strcpy(s_copy, s);
+    
+    // Tokenize the writable copy using space as a delimiter
+    char *token = strtok(s_copy, " ");
+    while (token != NULL) {
+        int len = strlen(token);
+        
+        // Extract the 1-indexed position from the last character
+        int index = token[len - 1] - '0';
+        
+        // Strip the trailing digit by null-terminating the token 1 character early
+        token[len - 1] = '\0';
+        
+        // Store the pointer to this clean token inside our tracking array
+        words[index] = token;
+        count++;
+        
+        // Move to the next token
+        token = strtok(NULL, " ");
+    }
+    
+    // Allocate memory for the final output string 
+    // It needs space for the characters, spaces, and the null-terminator
+    char *result = (char *)malloc((s_len + 1) * sizeof(char));
+    result[0] = '\0'; // Properly initialize the first character as a null terminator
+    
+    // Reconstruct the sentence in the correct order
+    for (int i = 1; i <= count; i++) {
+        strcat(result, words[i]);
+        if (i < count) {
+            strcat(result, " "); // Add space between words
+        }
+    }
+    
+    // Free the temporary writable copy to avoid memory leaks
+    free(s_copy);
+    
+    return result;
+}
