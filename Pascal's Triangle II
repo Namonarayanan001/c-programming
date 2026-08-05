@@ -1,0 +1,28 @@
+/**
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+int* getRow(int rowIndex, int* returnSize) {
+    // A row at 'rowIndex' (0-indexed) has exactly 'rowIndex + 1' elements
+    *returnSize = rowIndex + 1;
+    
+    // Allocate memory for just the single target row
+    int* row = (int*)malloc((*returnSize) * sizeof(int));
+    
+    // Initialize the row elements to 0
+    for (int i = 0; i <= rowIndex; i++) {
+        row[i] = 0;
+    }
+    
+    // The peak of the triangle starts at index 0 with value 1
+    row[0] = 1;
+    
+    // Iteratively build up to the target rowIndex
+    for (int i = 1; i <= rowIndex; i++) {
+        // Iterate backwards to update values in-place without overwriting what we need
+        for (int j = i; j > 0; j--) {
+            row[j] = row[j] + row[j - 1];
+        }
+    }
+    
+    return row;
+}
