@@ -1,0 +1,93 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+
+#define MAX_STATES 720 
+typedef struct {
+    char state[7];
+    int moves;
+} QueueNode;
+
+typedef struct {
+    char states[MAX_STATES][7];
+    int count;
+} VisitedSet;
+
+void addVisited(VisitedSet* set, const char* state) {
+    strcpy(set->states[set->count++], state);
+}
+
+bool isVisited(VisitedSet* set, const char* state) {
+    for (int i = 0; i < set->count; i++) {
+        if (strcmp(set->states[i], state) == 0) return true;
+    }
+    return false;
+}
+
+int slidingPuzzle(int** board, int boardSize, int* boardColSize) {
+    char target[] = "123450";
+    char start[7] = "";
+    
+    int idx = 0;
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 3; j++) {
+            start[idx++] = board[i][j] + '0';
+        }
+    }
+    start[6] = '\0';
+
+    int dirs[6][4] = {
+        {1, 3, -1, -1}, // Index 0 can swap with 1, 3
+        {0, 2, 4, -1},  // Index 1 can swap with 0, 2, 4
+        {1, 5, -1, -1}, // Index 2 can swap with 1, 5
+        {0, 4, -1, -1}, // Index 3 can swap with 0, 4
+        {1, 3, 5, -1},  // Index 4 can swap with 1, 3, 5
+        {2, 4, -1, -1}  // Index 5 can swap with 2, 4
+    };
+
+    QueueNode* queue = (QueueNode*)malloc(MAX_STATES * sizeof(QueueNode));
+    int head = 0, tail = 0;
+    
+    VisitedSet visited;
+    visited.count = 0;
+
+    strcpy(queue[tail].state, start);
+    queue[tail].moves = 0;
+    tail++;
+    addVisited(&visited, start);
+
+    while (head < tail) {
+        QueueNode curr = queue[head++];
+
+        if (strcmp(curr.state, target) == 0) {
+            free(queue);
+            return curr.moves;
+        }
+
+        int zeroIdx = 0;
+        while (curr.state[zeroIdx] != '0') zeroIdx++;
+
+        for (int i = 0; i < 4; i++) {
+            int nextIdx = dirs[zeroIdx][i];
+            if (nextIdx == -1) break; 
+
+            char nextState[7];
+            strcpy(nextState, curr.state);
+            
+            char temp = nextState[zeroIdx];
+            nextState[zeroIdx] = nextState[nextIdx];
+            nextState[nextIdx] = temp;
+
+            if (!isVisited(&visited, nextState)) {
+                addVisited(&visited, nextState);
+                strcpy(queue[tail].state, nextState);
+                queue[tail].moves = curr.moves + 1;
+                tail++;
+            }
+        }
+    }
+
+    free(queue);
+    return -1; 
+}
