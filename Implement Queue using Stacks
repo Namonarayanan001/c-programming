@@ -1,0 +1,65 @@
+#include <stdbool.h>
+#include <stdlib.h>
+
+typedef struct {
+    int* in_stack;
+    int* out_stack;
+    int in_top;
+    int out_top;
+    int capacity;
+} MyQueue;
+
+// Helper function to initialize or expand stack memory dynamically
+void resizeStack(int** stack, int* capacity) {
+    int new_capacity = (*capacity == 0) ? 100 : (*capacity) * 2;
+    *stack = (int*)realloc(*stack, new_capacity * sizeof(int));
+    *capacity = new_capacity;
+}
+
+MyQueue* myQueueCreate() {
+    MyQueue* queue = (MyQueue*)malloc(sizeof(MyQueue));
+    queue->capacity = 100; // Start with a safe initial capacity
+    queue->in_stack = (int*)malloc(queue->capacity * sizeof(int));
+    queue->out_stack = (int*)malloc(queue->capacity * sizeof(int));
+    queue->in_top = -1;
+    queue->out_top = -1;
+    return queue;
+}
+
+void myQueuePush(MyQueue* obj, int x) {
+    // Check if in_stack is full and resize both if needed
+    if (obj->in_top >= obj->capacity - 1) {
+        resizeStack(&(obj->in_stack), &(obj->capacity));
+        obj->out_stack = (int*)realloc(obj->out_stack, obj->capacity * sizeof(int));
+    }
+    obj->in_stack[++(obj->in_top)] = x;
+}
+
+// Helper function to shift elements from in_stack to out_stack when out_stack is empty
+void moveElements(MyQueue* obj) {
+    if (obj->out_top == -1) {
+        while (obj->in_top != -1) {
+            obj->out_stack[++(obj->out_top)] = obj->in_stack[(obj->in_top)--];
+        }
+    }
+}
+
+int myQueuePop(MyQueue* obj) {
+    moveElements(obj);
+    return obj->out_stack[(obj->out_top)--];
+}
+
+int myQueuePeek(MyQueue* obj) {
+    moveElements(obj);
+    return obj->out_stack[obj->out_top];
+}
+
+bool myQueueEmpty(MyQueue* obj) {
+    return (obj->in_top == -1) && (obj->out_top == -1);
+}
+
+void myQueueFree(MyQueue* obj) {
+    free(obj->in_stack);
+    free(obj->out_stack);
+    free(obj);
+}
