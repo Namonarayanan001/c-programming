@@ -1,0 +1,22 @@
+#include <stdbool.h>
+
+bool validateStackSequences(int* pushed, int pushedSize, int* popped, int poppedSize) {
+    // Dynamically simulate a stack using an array of the same size
+    int stack[pushedSize];
+    int top = -1; // Pointer to track the top of the stack
+    int popIndex = 0; // Pointer to track the current position in popped array
+
+    for (int i = 0; i < pushedSize; i++) {
+        // Step 1: Push the current element onto our stack
+        stack[++top] = pushed[i];
+
+        // Step 2: Continuously pop if the top of stack matches the expected popped element
+        while (top >= 0 && stack[top] == popped[popIndex]) {
+            top--;          // Remove element from stack
+            popIndex++;     // Move to the next element in the popped sequence
+        }
+    }
+
+    // If the stack is completely empty, the entire sequence was successfully validated
+    return top == -1;
+}
