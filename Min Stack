@@ -1,0 +1,74 @@
+#include <stdlib.h>
+#include <limits.h>
+
+// Define a structure to hold both the value and the current minimum
+typedef struct {
+    int val;
+    int min;
+} StackNode;
+
+typedef struct {
+    StackNode* data;
+    int topIndex;
+    int capacity;
+} MinStack;
+
+/** Initializes the stack object */
+MinStack* minStackCreate() {
+    MinStack* obj = (MinStack*)malloc(sizeof(MinStack));
+    obj->capacity = 30000; // Based on the maximum constraints (3 * 10^4 calls)
+    obj->data = (StackNode*)malloc(obj->capacity * sizeof(StackNode));
+    obj->topIndex = -1;
+    return obj;
+}
+
+/** Pushes the element value onto the stack */
+void minStackPush(MinStack* obj, int val) {
+    obj->topIndex++;
+    
+    // Determine the new minimum
+    int currentMin = val;
+    if (obj->topIndex > 0) {
+        int previousMin = obj->data[obj->topIndex - 1].min;
+        if (previousMin < currentMin) {
+            currentMin = previousMin;
+        }
+    }
+    
+    // Store both the value and the current minimum at the new top
+    obj->data[obj->topIndex].val = val;
+    obj->data[obj->topIndex].min = currentMin;
+}
+
+/** Removes the element on the top of the stack */
+void minStackPop(MinStack* obj) {
+    if (obj->topIndex >= 0) {
+        obj->topIndex--;
+    }
+}
+
+/** Gets the top element of the stack */
+int minStackTop(MinStack* obj) {
+    return obj->data[obj->topIndex].val;
+}
+
+/** Retrieves the minimum element in the stack */
+int minStackGetMin(MinStack* obj) {
+    return obj->data[obj->topIndex].min;
+}
+
+/** Deallocates the memory used by the stack */
+void minStackFree(MinStack* obj) {
+    free(obj->data);
+    free(obj);
+}
+
+/**
+ * Your MinStack struct will be instantiated and called as such:
+ * MinStack* obj = minStackCreate();
+ * minStackPush(obj, val);
+ * minStackPop(obj);
+ * int param_3 = minStackTop(obj);
+ * int param_4 = minStackGetMin(obj);
+ * minStackFree(obj);
+ */
