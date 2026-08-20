@@ -1,0 +1,150 @@
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_CALLS 20005
+#define HASH_SIZE 19997  // A prime number near the maximum number of unique calls
+
+// Hash map entry to keep track of the frequency of each distinct element
+typedef struct HashEntry {
+    int val;
+    int freq;
+    struct HashEntry* next;
+} HashEntry;
+
+// Dynamic array structure representing an individual stack bucket
+typedef struct {
+    int* elements;
+    int topIndex;
+    int capacity;
+} StackBucket;
+
+// Main FreqStack structure
+typedef struct {
+    HashEntry* hashTable[HASH_SIZE]; // Array of linked lists for hash collision handling
+    StackBucket* groupStacks;        // Array of stacks grouped by frequency index
+    int groupCapacity;               // Maximum frequency level allocated so far
+    int maxFreq;                     // Stores the current maximum frequency in the system
+} FreqStack;
+
+// Helper function to find or insert a value in the hash map and return its pointer
+HashEntry* getHashEntry(FreqStack* obj, int val) {
+    int hashIdx = abs(val) % HASH_SIZE;
+    HashEntry* curr = obj->hashTable[hashIdx];
+    
+    while (curr != NULL) {
+        if (curr->val == val) {
+            return curr;
+        }
+        curr = curr->next;
+    }
+    
+    // Element not found, create a new hash map entry
+    HashEntry* newEntry = (HashEntry*)malloc(sizeof(HashEntry));
+    newEntry->val = val;
+    newEntry->freq = 0;
+    newEntry->next = obj->hashTable[hashIdx];
+    obj->hashTable[hashIdx] = newEntry;
+    return newEntry;
+}
+
+/** Constructs an empty frequency stack */
+FreqStack* freqStackCreate() {
+    FreqStack* obj = (FreqStack*)malloc(sizeof(FreqStack));
+    memset(obj->hashTable, 0, sizeof(obj->hashTable));
+    
+    // Allocate space for frequency group stacks up to an expected limit
+    obj->groupCapacity = 100; 
+    obj->groupStacks = (StackBucket*)calloc(obj->groupCapacity, sizeof(StackBucket));
+    obj->maxFreq = 0;
+    return obj;
+}
+
+/** Pushes an integer val onto the top of the stack */
+void freqStackPush(FreqStack* obj, int val) {
+    // 1. Update the frequency of the element in the hash map
+    HashEntry* entry = getHashEntry(obj, val);
+    entry->freq++;
+    int f = entry->freq;
+    
+    // 2. Adjust maxFreq tracking variable
+    if (f > obj->maxFreq) {
+        obj->maxFreq = f;
+    }
+    
+    // 3. Dynamically resize the frequency group stack array if it overflows
+    if (f >= obj->groupCapacity) {
+        int oldCap = obj->groupCapacity;
+        obj->groupCapacity *= 2;
+        obj->groupStacks = (StackBucket*)realloc(obj->groupStacks, obj->groupCapacity * sizeof(StackBucket));
+        memset(obj->groupStacks + oldCap, 0, (obj->groupCapacity - oldCap) * sizeof(StackBucket));
+    }
+    
+    // 4. Lazy initialize the specific frequency stack bucket if empty
+    if (obj->groupStacks[f].elements == NULL) {
+        obj->groupStacks[f].capacity = 16;
+        obj->groupStacks[f].elements = (int*)malloc(obj->groupStacks[f].capacity * sizeof(int));
+        obj->groupStacks[f].topIndex = -1;
+    }
+    
+    // 5. Expand individual frequency stack capacity if full
+    StackBucket* bucket = &obj->groupStacks[f];
+    if (bucket->topIndex + 1 >= bucket->capacity) {
+        bucket->capacity *= 2;
+        bucket->elements = (int*)realloc(bucket->elements, bucket->capacity * sizeof(int));
+    }
+    
+    // 6. Push the value into its respective frequency bucket
+    bucket->topIndex++;
+    bucket->elements[bucket->topIndex] = val;
+}
+
+/** Removes and returns the most frequent element in the stack */
+int freqStackPop(FreqStack* obj) {
+    int f = obj->maxFreq;
+    StackBucket* bucket = &obj->groupStacks[f];
+    
+    // Pop the topmost element from the highest frequency bucket
+    int val = bucket->elements[bucket->topIndex];
+    bucket->topIndex--;
+    
+    // Decrement the elements overall count tracking in the hash table
+    HashEntry* entry = getHashEntry(obj, val);
+    entry->freq--;
+    
+    // If the current highest frequency bucket is empty, lower maxFreq pointer
+    if (bucket->topIndex == -1) {
+        obj->maxFreq--;
+    }
+    
+    return val;
+}
+
+/** Deallocates the memory used by the frequency stack */
+void freqStackFree(FreqStack* obj) {
+    // Free individual frequency stack buffers
+    for (int i = 0; i < obj->groupCapacity; i++) {
+        if (obj->groupStacks[i].elements != NULL) {
+            free(obj->groupStacks[i].elements);
+        }
+    }
+    free(obj->groupStacks);
+    
+    // Free dynamically allocated hash map chaining entries
+    for (int i = 0; i < HASH_SIZE; i++) {
+        HashEntry* curr = obj->hashTable[i];
+        while (curr != NULL) {
+            HashEntry* tmp = curr;
+            curr = curr->next;
+            free(tmp);
+        }
+    }
+    free(obj);
+}
+
+/**
+ * Your FreqStack struct will be instantiated and called as such:
+ * FreqStack* obj = freqStackCreate();
+ * freqStackPush(obj, val);
+ * int param_2 = freqStackPop(obj);
+ * freqStackFree(obj);
+ */
