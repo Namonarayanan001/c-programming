@@ -1,0 +1,125 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+typedef struct {
+    int r;
+    int c;
+    int h;
+} Cell;
+
+typedef struct {
+    Cell* data;
+    int size;
+    int capacity;
+} MinHeap;
+
+MinHeap* createMinHeap(int capacity) {
+    MinHeap* heap = (MinHeap*)malloc(sizeof(MinHeap));
+    heap->data = (Cell*)malloc(sizeof(Cell) * capacity);
+    heap->size = 0;
+    heap->capacity = capacity;
+    return heap;
+}
+
+void swap(Cell* a, Cell* b) {
+    Cell temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+void push(MinHeap* heap, Cell val) {
+    heap->data[heap->size] = val;
+    int curr = heap->size;
+    heap->size++;
+    
+    while (curr > 0) {
+        int parent = (curr - 1) / 2;
+        if (heap->data[curr].h < heap->data[parent].h) {
+            swap(&heap->data[curr], &heap->data[parent]);
+            curr = parent;
+        } else {
+            break;
+        }
+    }
+}
+
+Cell pop(MinHeap* heap) {
+    Cell res = heap->data[0];
+    heap->size--;
+    heap->data[0] = heap->data[heap->size];
+    
+    int curr = 0;
+    while (2 * curr + 1 < heap->size) {
+        int left = 2 * curr + 1;
+        int right = 2 * curr + 2;
+        int smallest = left;
+        
+        if (right < heap->size && heap->data[right].h < heap->data[left].h) {
+            smallest = right;
+        }
+        
+        if (heap->data[smallest].h < heap->data[curr].h) {
+            swap(&heap->data[curr], &heap->data[smallest]);
+            curr = smallest;
+        } else {
+            break;
+        }
+    }
+    return res;
+}
+
+int trapRainWater(int** heightMap, int heightMapSize, int* heightMapColSize) {
+    if (heightMapSize < 3 || heightMapColSize[0] < 3) return 0;
+    
+    int m = heightMapSize;
+    int n = heightMapColSize[0];
+    int totalCells = m * n;
+    
+    bool** visited = (bool**)malloc(sizeof(bool*) * m);
+    for (int i = 0; i < m; i++) {
+        visited[i] = (bool*)calloc(n, sizeof(bool));
+    }
+    
+    MinHeap* heap = createMinHeap(totalCells);
+    
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            if (i == 0 || i == m - 1 || j == 0 || j == n - 1) {
+                Cell cell = {i, j, heightMap[i][j]};
+                push(heap, cell);
+                visited[i][j] = true;
+            }
+        }
+    }
+    
+    int trappedWater = 0;
+    int dirs[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+    
+    while (heap->size > 0) {
+        Cell curr = pop(heap);
+        
+        for (int i = 0; i < 4; i++) {
+            int nr = curr.r + dirs[i][0];
+            int nc = curr.c + dirs[i][1];
+            
+            if (nr >= 0 && nr < m && nc >= 0 && nc < n && !visited[nr][nc]) {
+                visited[nr][nc] = true;
+                
+                if (heightMap[nr][nc] < curr.h) {
+                    trappedWater += curr.h - heightMap[nr][nc];
+                }
+                
+                Cell neighbor = {nr, nc, heightMap[nr][nc] > curr.h ? heightMap[nr][nc] : curr.h};
+                push(heap, neighbor);
+            }
+        }
+    }
+    
+    for (int i = 0; i < m; i++) free(visited[i]);
+    free(visited);
+    free(heap->data);
+    free(heap);
+    
+    return trappedWater;
+}
