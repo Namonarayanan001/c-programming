@@ -1,0 +1,51 @@
+#include <stdbool.h>
+#include <stddef.h>
+#include <limits.h>
+
+static bool isValid(const int* nums, int numsSize, int k, long long mid) {
+    int count = 1;
+    long long current_sum = 0;
+
+    for (int i = 0; i < numsSize; i++) {
+        if (nums[i] > mid) {
+            return false;
+        }
+        if (current_sum + nums[i] > mid) {
+            count++;
+            current_sum = nums[i];
+            if (count > k) {
+                return false;
+            }
+        } else {
+            current_sum += nums[i];
+        }
+    }
+    return true;
+}
+
+int splitArray(int* nums, int numsSize, int k) {
+    long long left = 0;
+    long long right = 0;
+
+    for (int i = 0; i < numsSize; i++) {
+        if (nums[i] > left) {
+            left = nums[i];
+        }
+        right += nums[i];
+    }
+
+    long long ans = right;
+
+    while (left <= right) {
+        long long mid = left + (right - left) / 2;
+
+        if (isValid(nums, numsSize, k, mid)) {
+            ans = mid;
+            right = mid - 1; 
+        } else {
+            left = mid + 1;  
+        }
+    }
+
+    return (int)ans;
+}
